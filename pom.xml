@@ -12,7 +12,9 @@
         <java.version>1.8</java.version>
         <project.target.dir>${project.basedir}/target</project.target.dir>
         <docker.image.prefix>${env.docker.image.prefix}</docker.image.prefix>
-        <docker.image.repository>${env.docker.image.repository}</docker.image.repository>
+        <docker.image.repository>${docker.image.prefix}/${project.artifactId}</docker.image.repository>
+        <docker.image.tag>${project.version}</docker.image.tag>
+        <docker.image.jar_file>target/${project.build.finalName}.jar</docker.image.jar_file>        
     </properties>
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -65,9 +67,10 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <repository>${docker.image.prefix}/${project.artifactId}</repository>
+                    <repository>${docker.image.repository}</repository>
+					<tag>${docker.image.tag}</tag>
                     <buildArgs>
-                        <JAR_FILE>target/sb-kube-1.0-SNAPSHOT.jar</JAR_FILE>
+                        <JAR_FILE>${docker.image.jar_file}</JAR_FILE>
                     </buildArgs>
                 </configuration>
             </plugin>
