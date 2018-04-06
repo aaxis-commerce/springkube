@@ -6,8 +6,8 @@ metadata:
 spec:
   scaleTargetRef:
     apiVersion: apps/v1beta1
-    kind: sb-kube-deployment
-    name: php-apache
+      kind: Deployment
+      name: sb-kube-deployment
   minReplicas: 1
   maxReplicas: 10
-  targetCPUUtilizationPercentage: 5
+  targetCPUUtilizationPercentage: 10
