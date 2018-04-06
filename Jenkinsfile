@@ -34,8 +34,10 @@ pipeline {
         sh '''./mvnw --batch-mode -V -U -e clean compile test-compile -Dsurefire.useFile=false'''
         stash name: 'springkube-target-build', includes: 'target/**'
       }
-      always {
-        archiveArtifacts artifacts: 'target/classes/**', fingerprint: true
+      post {
+        always {
+          archiveArtifacts artifacts: 'target/classes/**', fingerprint: true
+        }
       }
     }
     stage('Test springkube') {
