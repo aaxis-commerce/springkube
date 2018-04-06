@@ -1,0 +1,30 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: sb-kube-deployment
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sb-kube
+        version: v1
+    spec:
+      containers:
+      - name: sb-kube
+        image: safehans/sb-kube
+        ports:
+        - containerPort: 8091
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sb-kube-service
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8091
+  selector:
+    app: sb-kube
+---
+
