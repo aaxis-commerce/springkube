@@ -76,25 +76,13 @@ pipeline {
         stash(name: 'springkube-package', includes: 'target/**')
       }
     }
-    stage('Deploy springkube') {
-      /* when {
-        branch 'production'
-      } */
-      steps {
-        timeout(time: 5, unit: 'MINUTES') {
-          input(message: 'Deploy to repository?', ok: 'Approve')
-        }
-        
-        echo 'Deploying..'
-      }
-    }
     stage('Build docker image') {
       agent any
       steps {
         unstash name: 'springkube-package'
         sh """./mvnw --batch-mode -V -U -e dockerfile:build -DskipTests=true \
         -Ddocker.image.repository=tfleisher/k8s-repo \
-        -Ddocker.image.tag='spring-springkube-${BRANCH_NAME}-b${env.BUILD_NUMBER}'
+        -Ddocker.image.tag='springkube-${BRANCH_NAME}-b${env.BUILD_NUMBER}'
         """
       }
 
@@ -108,11 +96,25 @@ pipeline {
         script {
           // Empty url uses public repository
           withDockerRegistry([credentialsId: 'docker-hub-creds', url: '']) {
-            def myImage = docker.image("tfleisher/k8s-repo:spring-springkube-${BRANCH_NAME}-b${env.BUILD_NUMBER}")
+            def myImage = docker.image("tfleisher/k8s-repo:springkube-${BRANCH_NAME}-b${env.BUILD_NUMBER}")
             myImage.push()
           }
         }
       }
     }
+    /*
+    stage('Deploy springkube') {
+      when {
+        branch 'production'
+      }
+      steps {
+        timeout(time: 5, unit: 'MINUTES') {
+          input(message: 'Deploy to repository?', ok: 'Approve')
+        }
+        
+        echo 'Some step to trigger deployment...'
+      }
+    } 
+    */
   }
 }
