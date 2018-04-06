@@ -34,6 +34,9 @@ pipeline {
         sh '''./mvnw --batch-mode -V -U -e clean compile test-compile -Dsurefire.useFile=false'''
         stash name: 'springkube-target-build', includes: 'target/**'
       }
+      always {
+        archiveArtifacts artifacts: 'target/classes/**', fingerprint: true
+      }
     }
     stage('Test springkube') {
       agent {
@@ -74,6 +77,7 @@ pipeline {
         unstash name:'springkube-target-test'
         sh '''./mvnw --batch-mode -V -U -e package -DskipTests=true -Ddockerfile.skip'''
         stash(name: 'springkube-package', includes: 'target/**')
+        archiveArtifacts artifacts: 'target/**.jar', fingerprint: true
       }
     }
     stage('Build docker image') {
@@ -84,6 +88,7 @@ pipeline {
         -Ddocker.image.repository=tfleisher/k8s-repo \
         -Ddocker.image.tag='springkube-${BRANCH_NAME}-b${env.BUILD_NUMBER}'
         """
+        archiveArtifacts artifacts: 'target/docker/**', fingerprint: true
       }
 
     }
