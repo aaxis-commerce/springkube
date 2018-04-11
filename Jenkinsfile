@@ -13,6 +13,7 @@ pipeline {
           steps {
             fileExists 'README.md'
             sh './mvnw validate'
+            sh './mvnw clean'
           }
         }
         stage('Validate pipeline') {
@@ -33,6 +34,7 @@ pipeline {
       steps {
         sh '''./mvnw --batch-mode -V -U -e clean compile test-compile -Dsurefire.useFile=false'''
         stash name: 'springkube-target-build', includes: 'target/**'
+        sh './mvnw clean'
       }
       post {
         always {
@@ -55,6 +57,7 @@ pipeline {
         //stash name: 'testResults', includes: '**/target/surefire-reports/**/*.xml'
         echo 'No tests to run'
         stash name: 'springkube-target-test', includes: 'target/**'
+        sh './mvnw clean'
       }
     }
     stage('Record springkube Tests') {
@@ -80,6 +83,7 @@ pipeline {
         sh '''./mvnw --batch-mode -V -U -e package -DskipTests=true -Ddockerfile.skip'''
         stash(name: 'springkube-package', includes: 'target/**')
         archiveArtifacts artifacts: 'target/**.jar', fingerprint: true
+        sh './mvnw clean'
       }
     }
     stage('Build docker image') {
@@ -91,6 +95,7 @@ pipeline {
         -Ddocker.image.tag='springkube-${BRANCH_NAME}-b${env.BUILD_NUMBER}'
         """
         archiveArtifacts artifacts: 'target/docker/**', fingerprint: true
+        sh './mvnw clean'
       }
 
     }
