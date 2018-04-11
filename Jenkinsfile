@@ -90,7 +90,7 @@ pipeline {
       agent {
         docker {
           image 'openjdk:8-jdk-alpine'
-          args '--group-add $(id -G |sed -e s~[[:space:]]~\ --group-add\ ~g) -v $HOME/.m2:/mvn_repo -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=${DOCKER_HOST:-unix:///var/run/docker.sock}'
+          args '--group-add $(id -G |sed -e s~[[:space:]]~\\ --group-add\\ ~g) -v $HOME/.m2:/mvn_repo -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=${DOCKER_HOST:-unix:///var/run/docker.sock}'
         }
         
       }
