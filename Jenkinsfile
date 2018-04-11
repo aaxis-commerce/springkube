@@ -90,7 +90,7 @@ pipeline {
       agent {
         docker {
           image 'openjdk:8-jdk-alpine'
-          args '-v $HOME/.m2:/mvn_repo -v /var/run/docker.sock:/var/run/docker.sock'
+          args '-v $HOME/.m2:/mvn_repo -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=$DOCKER_HOST'
         }
         
       }
@@ -109,7 +109,7 @@ pipeline {
       agent {
         docker {
           image 'openjdk:8-jdk-alpine'
-          args '-v $HOME/.m2:/mvn_repo -v /var/run/docker.sock:/var/run/docker.sock'
+          args '-v $HOME/.m2:/mvn_repo -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=$DOCKER_HOST'
         }
         
       }
