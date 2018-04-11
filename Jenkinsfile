@@ -87,7 +87,13 @@ pipeline {
       }
     }
     stage('Build docker image') {
-      agent any
+      agent {
+        docker {
+          image 'openjdk:8-jdk-alpine'
+          args '-v $HOME/.m2:/mvn_repo'
+        }
+        
+      }
       steps {
         unstash name: 'springkube-package'
         sh """./mvnw -Dmaven.repo.local=/mvn_repo/repository --batch-mode -V -U -e dockerfile:build -DskipTests=true \
@@ -100,7 +106,13 @@ pipeline {
 
     }
     stage('Push docker image') {
-      agent any
+      agent {
+        docker {
+          image 'openjdk:8-jdk-alpine'
+          args '-v $HOME/.m2:/mvn_repo'
+        }
+        
+      }
       when {
           branch 'master'
       }
