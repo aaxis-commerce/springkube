@@ -90,7 +90,7 @@ pipeline {
       agent {
         docker {
           image 'openjdk:8-jdk-alpine'
-          args '--group-add $(id -G |sed -e s~[[:space:]]~\\ --group-add\\ ~g) -v $HOME/.m2:/mvn_repo -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=${DOCKER_HOST:-unix:///var/run/docker.sock}'
+          args '-u 0:0 -v $HOME/.m2:/mvn_repo -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=${DOCKER_HOST:-unix:///var/run/docker.sock}'
         }
         
       }
@@ -101,7 +101,7 @@ pipeline {
         -Ddocker.image.tag='springkube-${BRANCH_NAME}-b${env.BUILD_NUMBER}'
         """
         archiveArtifacts artifacts: 'target/docker/**', fingerprint: true
-        //sh './mvnw clean'
+        sh './mvnw clean'
       }
 
     }
