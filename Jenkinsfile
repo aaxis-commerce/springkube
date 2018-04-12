@@ -96,6 +96,7 @@ pipeline {
       }
       steps {
         unstash name: 'springkube-package'
+        sh 'echo DOCKER_HOST is :$DOCKER_HOST:'
         sh """./mvnw -Dmaven.repo.local=/mvn_repo/repository --batch-mode -V -U -e dockerfile:build -DskipTests=true \
         -Ddocker.image.repository=tfleisher/k8s-repo \
         -Ddocker.image.tag='springkube-${BRANCH_NAME}-b${env.BUILD_NUMBER}'
