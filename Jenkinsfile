@@ -90,13 +90,14 @@ pipeline {
       agent {
         docker {
           image 'openjdk:8-jdk-alpine'
+          // XXX: This only works if DOCKER_AGENT_DOCKERHOST_ARG is set as a global environment variable in jenkins.
+          // There must be a better way to handle environment differences in docker args.
           args '-u 0:0 -v $HOME/.m2:/mvn_repo -v /var/run/docker.sock:/var/run/docker.sock $DOCKER_AGENT_DOCKERHOST_ARG'
         }
         
       }
       steps {
         unstash name: 'springkube-package'
-        sh 'echo DOCKER_HOST is :$DOCKER_HOST:'
         sh """./mvnw -Dmaven.repo.local=/mvn_repo/repository --batch-mode -V -U -e dockerfile:build -DskipTests=true \
         -Ddocker.image.repository=tfleisher/k8s-repo \
         -Ddocker.image.tag='springkube-${BRANCH_NAME}-b${env.BUILD_NUMBER}'
