@@ -22,6 +22,7 @@ pipeline {
             	mvn.local.repo - override may be needed in some environments to avoid permissions problems
             	alwaysPushImage - push to docker repo, even if this isn't master branch
             	
+            	NOTE: This requires the pipeline-utility-steps plugin for the readProperties library method.
             */
             script {
                 pipelineProperties = readProperties file: "${env.JENKINS_HOME}/kube-workspace/springkube-ci.properties"
