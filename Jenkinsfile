@@ -7,12 +7,13 @@ pipeline {
           agent {
             docker {
               image 'openjdk:8-jdk-alpine'
-              args '-u 0:0 -v $HOME/.m2:/root/.m2'
+              args '-v $HOME/.m2:/mvn_repo'
             }
           }
           steps {
             fileExists 'README.md'
-            sh './mvnw validate'
+            sh './mvnw -Dmaven.repo.local=/mvn_repo/repository validate'
+            //sh './mvnw clean'
           }
         }
         stage('Validate pipeline') {
@@ -26,13 +27,14 @@ pipeline {
       agent {
         docker {
           image 'openjdk:8-jdk-alpine'
-          args '-u 0:0 -v $HOME/.m2:/root/.m2'
+          args '-v $HOME/.m2:/mvn_repo'
         }
         
       }
       steps {
-        sh '''./mvnw --batch-mode -V -U -e clean compile test-compile -Dsurefire.useFile=false'''
+        sh '''./mvnw -Dmaven.repo.local=/mvn_repo/repository --batch-mode -V -U -e clean compile test-compile -Dsurefire.useFile=false'''
         stash name: 'springkube-target-build', includes: 'target/**'
+        //sh './mvnw clean'
       }
       post {
         always {
@@ -44,17 +46,18 @@ pipeline {
       agent {
         docker {
           image 'openjdk:8-jdk-alpine'
-          args '-u 0:0 -v $HOME/.m2:/root/.m2'
+          args '-v $HOME/.m2:/mvn_repo'
         }
         
       }
       steps {
         echo 'Test Stage'
         unstash name:'springkube-target-build'
-        //sh '''./mvnw --batch-mode -V -U -e test -Dsurefire.useFile=false -Dmaven.test.failure.ignore=true'''
+        //sh '''./mvnw -Dmaven.repo.local=/mvn_repo/repository --batch-mode -V -U -e test -Dsurefire.useFile=false -Dmaven.test.failure.ignore=true'''
         //stash name: 'testResults', includes: '**/target/surefire-reports/**/*.xml'
         echo 'No tests to run'
         stash name: 'springkube-target-test', includes: 'target/**'
+        //sh './mvnw clean'
       }
     }
     stage('Record springkube Tests') {
@@ -70,32 +73,41 @@ pipeline {
       agent {
         docker {
           image 'openjdk:8-jdk-alpine'
-          args '-u 0:0 -v $HOME/.m2:/root/.m2'
+          args '-v $HOME/.m2:/mvn_repo'
         }
         
       }
       steps {
         echo 'Building Package'
         unstash name:'springkube-target-test'
-        sh '''./mvnw --batch-mode -V -U -e package -DskipTests=true -Ddockerfile.skip'''
+        sh '''./mvnw -Dmaven.repo.local=/mvn_repo/repository --batch-mode -V -U -e package -DskipTests=true -Ddockerfile.skip'''
         stash(name: 'springkube-package', includes: 'target/**')
         archiveArtifacts artifacts: 'target/**.jar', fingerprint: true
+        //sh './mvnw clean'
       }
     }
     stage('Build docker image') {
-      agent any
+      agent {
+        docker {
+          image 'openjdk:8-jdk-alpine'
+          // XXX: This only works if DOCKER_AGENT_DOCKERHOST_ARG is set as a global environment variable in jenkins.
+          // There must be a better way to handle environment differences in docker args.
+          args '-u 0:0 -v $HOME/.m2:/mvn_repo -v /var/run/docker.sock:/var/run/docker.sock $DOCKER_AGENT_DOCKERHOST_ARG'
+        }
+        
+      }
       steps {
         unstash name: 'springkube-package'
-        sh """./mvnw --batch-mode -V -U -e dockerfile:build -DskipTests=true \
+        sh """./mvnw -Dmaven.repo.local=/mvn_repo/repository --batch-mode -V -U -e dockerfile:build -DskipTests=true \
         -Ddocker.image.repository=tfleisher/k8s-repo \
         -Ddocker.image.tag='springkube-${BRANCH_NAME}-b${env.BUILD_NUMBER}'
         """
         archiveArtifacts artifacts: 'target/docker/**', fingerprint: true
+        sh './mvnw clean'
       }
 
     }
     stage('Push docker image') {
-      agent any
       when {
           branch 'master'
       }
