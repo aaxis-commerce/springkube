@@ -1,0 +1,85 @@
+/* Jenkinsfile for deploy with parameters job */
+pipeline {
+  parameters {
+      string(defaultValue: 'springkube-master-b1', description: 'Tag', name: 'springkubeTag')
+      string(defaultValue: 'springkube', description: 'Namespace', name: 'springkubeNS')
+      string(defaultValue: '8081', description: 'Port', name: 'springkubePort')
+      string(defaultValue: '/etc/kube/springkube-0.1.1.tgz', description: 'Helm Chart', name: 'helmChart')
+      string(defaultValue: 'springkube-helm', description: 'Helm Deployment', name: 'helmDeployment')
+      booleanParam(defaultValue: false, description: 'Autoscale Enable?', name: 'autoscaleEnable')
+      string(defaultValue: '1', description: 'Replica Count', name: 'repliaCount')
+      string(defaultValue: '5', description: 'Max Replicas', name: 'autoscaleMaxReplicas')
+      string(defaultValue: '10', description: 'CPU Target %', name: 'targetCPUUtilizationPercentage')
+
+  }
+
+  agent any
+  stages {
+    stage('Read Configuration') {
+      steps {
+          fileExists "${env.JENKINS_HOME}/kube-workspace/springkube-deployment.properties"
+            /*
+            	The pipeline properties file is required to specify at least the following:
+            	
+            	springkube.dockerRepo
+            	kubeconfig - Path in running docker agent to KUBECONFIG to use (kube-workspace is mounted to /etc/kube/)
+            	kubecontext - Context in kubeconfig to use for deployment
+            	helmChart - Path in running docker agent to helm chart to use (kube-workspace is mounted to /etc/kube/)
+
+            	NOTE: This requires the pipeline-utility-steps plugin for the readProperties library method.
+            */
+          script {
+            pipelineProperties = readProperties file: "${env.JENKINS_HOME}/kube-workspace/springkube-deployment.properties"
+            kubeconfig = pipelineProperties[ 'kubeconfig' ]
+            kubecontext = pipelineProperties[ 'kubecontext' ]
+            dockerRepo = pipelineProperties[ 'springkube.dockerRepo' ]
+            helmChart = pipelineProperties[ 'helmChart' ]
+          }
+      }
+    }
+    stage('Display Template') {
+       agent {
+        docker {
+          image 'dtzar/helm-kubectl:2.8.2'
+          args '-v $HOME/.m2:/root/.m2 -v $HOME/kube-workspace:/etc/kube'
+        }
+      }
+      steps {
+          echo "Params: $params"
+          echo "Properties: $pipelineProperties"
+          sh "helm template --name-template springkube-helm ${helmChart} \
+          --set image.repository=${dockerRepo} --set image.tag=${params.springkubeTag} \
+          --set service.port=${params.springkubePort} --set replicaCount=${params.repliaCount} \
+          --set autoscale.enabled=${params.autoscaleEnable}  --set autoscale.maxReplicas=${params.autoscaleMaxReplicas} --set autoscale.targetCPUUtilizationPercentage=${params.targetCPUUtilizationPercentage}\
+          --set resources.limits.cpu=400m --set resources.requests.cpu=200m \
+          --namespace ${params.springkubeNS} "
+      }
+    }
+    stage('Confirm Deploy') {
+      steps {
+        timeout(time: 5, unit: 'MINUTES') {
+          input(message: 'Deploy to cluster?', ok: 'Approve')
+        }
+        echo 'Deployment approved'
+      }
+    }
+
+    stage('Deploy springkube') {
+      agent {
+        docker {
+          image 'dtzar/helm-kubectl:2.8.2'
+          args '-v $HOME/.m2:/root/.m2 -v $HOME/kube-workspace:/etc/kube'
+        }
+      }
+      steps {
+          sh "KUBECONFIG=${kubeconfig} helm upgrade --install ${params.helmDeployment} ${helmChart} \
+          --set image.repository=${dockerRepo} --set image.tag=${params.springkubeTag} \
+          --set service.port=${params.springkubePort} --set replicaCount=${params.repliaCount} \
+          --set autoscale.enabled=${params.autoscaleEnable}  --set autoscale.maxReplicas=${params.autoscaleMaxReplicas} --set autoscale.targetCPUUtilizationPercentage=${params.targetCPUUtilizationPercentage}\
+          --set resources.limits.cpu=400m --set resources.requests.cpu=200m \
+          --namespace ${params.springkubeNS} --kube-context ${kubecontext}"
+      }
+
+    }
+  }
+}
