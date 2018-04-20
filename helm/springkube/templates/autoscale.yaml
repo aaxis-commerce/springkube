@@ -1,0 +1,14 @@
+{{- if .Values.autoscale.enabled -}}
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sb-kube
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1beta1
+    kind: Deployment
+    name: {{ template "springkube.fullname" . }}
+  minReplicas: {{ .Values.replicaCount }}
+  maxReplicas: {{ .Values.autoscale.maxReplicas }}
+  targetCPUUtilizationPercentage: {{ .Values.autoscale.maxReplicas }}
+{{- end }}
