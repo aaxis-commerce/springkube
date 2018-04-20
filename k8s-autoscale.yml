@@ -6,8 +6,8 @@ metadata:
 spec:
   scaleTargetRef:
     apiVersion: apps/v1beta1
-      kind: Deployment
-      name: sb-kube-deployment
+    kind: Deployment
+    name: sb-kube-deployment
   minReplicas: 1
   maxReplicas: 10
   targetCPUUtilizationPercentage: 10
